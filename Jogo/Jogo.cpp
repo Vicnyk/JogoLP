@@ -12,7 +12,7 @@ using namespace std;
 vector <string> directionalCommands{ "ESQUERDA", "DIREITA", "ATRAS" , "FRENTE"};
 vector <string> movementLowCommands{ "AGACHAR", "DESLIZAR", "ABAIXAR" };
 vector <string> movementHighCommands{ "ESCALAR", "PULAR","SALTAR" ,"SUBIR"};
-vector <string> menuCommands{ "COMECAR" };
+vector <string> menuCommands{ "COMECAR", "SAIR", "RETORNAR","COMANDOS"};
 vector <string> interactCommands{ "INTERAGIR" };
 
 class command
@@ -231,6 +231,17 @@ public:
                 confirmation = true;
             }
             break;
+        case 50:
+            if (word == "RETORNAR")
+            {
+                confirmation = true;
+            }
+        default:
+            if (word == "COMANDOS" && currentScene != 7 && currentScene != 9)
+            {
+                progressScene = 50;
+                confirmation = true;
+            }
         }
         return confirmation;
     }
@@ -279,6 +290,22 @@ public:
     int changeScene(int scene)
     {
         return scene;
+    }
+    int specialScenes(int scene)
+    {
+        switch (scene)
+        {
+        case 8:
+        case 10:
+        case 14:
+            return 1;
+            break;
+        case 50:
+            return 2;
+        default:
+            return 0;
+            break;
+        }
     }
 };
 
@@ -335,7 +362,7 @@ void sceneDraw(int currentScene,ALLEGRO_FONT *font)
     {
     case 0:
         al_draw_text(font, al_map_rgb(255, 255, 255), 0, 0, NULL, "Bem vindo ao programa de testes #17!");
-        al_draw_multiline_text(font, al_map_rgb(255, 255, 255), 0, 20,1920,20, NULL,"Neste programa voce controla - ra um boneco ficticio com o objetivo de guia - lo ate o fim. Para guiar o boneco voce recebera uma mensagem dele descrevendo o que o boneco esta vendo naquele milisegundo. A partir da descricao, voce devera dar um comando relevante para que ele aja de acordo com a situacao. Para isso voce escrevera ou uma direcao cardinal(esquerda, direita, etc) ou um verbo no infinitivo relacionado a acao que voce quer que ele faca.Tenha em mente que, apesar de ser um mero boneco, ele sera capaz de discernir se o comando recebido e relevante a situacao ou nao, como por exemplo receber o comando 'pular' em vez de 'abrir' ao encontrar uma porta por exemplo, portanto tome cuidado! Alem disso, repetir muitas vezes o mesmo tipo de comando por desgastar o boneco, entao varie suas ordens!Voce pode a qualquer momento escrever 'comandos' para ver os comandos compreendidos pelo boneco. Isto e tudo. Quando estiver pronto para prosseguir, escreva 'comecar'.");
+        al_draw_multiline_text(font, al_map_rgb(255, 255, 255), 0, 20,1920,20, NULL,"Neste programa voce controla - ra um boneco ficticio com o objetivo de guia - lo ate o fim. Para guiar o boneco voce recebera uma mensagem dele descrevendo o que o boneco esta vendo naquele milisegundo. A partir da descricao, voce devera dar um comando relevante para que ele aja de acordo com a situacao. Para isso voce escrevera ou uma direcao cardinal(esquerda, direita, etc) ou um verbo no infinitivo relacionado a acao que voce quer que ele faca. Tenha em mente que, apesar de ser um mero boneco, ele sera capaz de discernir se o comando recebido e relevante a situacao ou nao, como por exemplo receber o comando 'pular' em vez de 'interagir' ao encontrar uma porta por exemplo, portanto tome cuidado! Alem disso, repetir muitas vezes o mesmo tipo de comando por desgastar o boneco, entao varie suas ordens! Voce pode a qualquer momento(que nao seja em cenas de acao) escrever 'comandos' para ver os comandos compreendidos pelo boneco. Isto e tudo. Quando estiver pronto para prosseguir, escreva 'comecar'.");
         break;
     case 1:
         strcpy_s(text, "Uma sala quadrada sem nada de especial se encontra ao redor. Uma porta se encontra na direita da sala, enquanto que imediatamente na frente existe um buraco de cerca de 1 metro de altura e largura.");
@@ -393,11 +420,14 @@ void sceneDraw(int currentScene,ALLEGRO_FONT *font)
         strcpy_s(text, "O boneco abre a porta e escapa do cenario!");
         al_draw_multiline_text(font, al_map_rgb(255, 255, 255), 0, 0, 1920, 20, NULL, text);
         break;
+    case 50:
+        strcpy_s(text, "ESQUERDA, DIREITA, ATRAS, FRENTE || AGACHAR, DESLIZAR, ABAIXAR || ESCALAR, SUBIR, PULAR, SALTAR || INTERAGIR");
+        al_draw_multiline_text(font, al_map_rgb(255, 255, 255), 0, 0, 1920, 20, NULL, text);
     }
 
 }
 
-void systemDraw(ALLEGRO_FONT* font,boneco* boneck)
+void systemDraw(ALLEGRO_FONT* font,boneco* boneck,int specialScene)
 {
     if (boneck->getActionTimerStarted())
     {
@@ -406,6 +436,19 @@ void systemDraw(ALLEGRO_FONT* font,boneco* boneck)
         al_draw_text(font, al_map_rgb(255, 255, 255), 1800, 900, NULL, time);
     }
 
+    if (specialScene != 0)
+    {
+        switch (specialScene)
+        {
+        case 1:
+            al_draw_text(font, al_map_rgb(255, 255, 255), 960, 540, NULL, "Escreva 'Sair' ou clique no 'x' para fechar o jogo.");
+            break;
+        case 2:
+            al_draw_text(font, al_map_rgb(255, 255, 255), 960, 540, NULL, "Escreva 'Retornar' para voltar a cena anterior.");
+            break;
+        }
+    
+    }
 }
 void drawTyping(ALLEGRO_FONT* font,string typing)
 {
@@ -458,8 +501,8 @@ void keyboard_update(ALLEGRO_EVENT* event,string &typing )
 
 int main()
 {
-    int commandType, currentScene, progressScene, actionTimerCount;
-    currentScene = commandType = actionTimerCount = 0;
+    int commandType, currentScene, progressScene, actionTimerCount, returnScene;
+    currentScene = commandType = actionTimerCount = returnScene = 0;
     progressScene = -1;
     bool redraw, progressConfirmed, done;
     string typing;
@@ -522,6 +565,9 @@ int main()
                break;
         }
 
+        if (typing == "SAIR")
+            done = true;
+
         if (done)
             break;
 
@@ -530,7 +576,7 @@ int main()
         {
             al_clear_to_color(al_map_rgb(0, 0, 0));
             sceneDraw(currentScene,font);
-            systemDraw(font,boneck);
+            systemDraw(font,boneck,boneck->specialScenes(currentScene));
             drawTyping (font,typing);
             al_flip_display();
             redraw = false;
@@ -578,9 +624,22 @@ int main()
             }
             if (progressConfirmed)
             {
-                currentScene = progress->changeScene(progressScene);
-                typing = "";
-                progressConfirmed = false;
+                if (typing == "COMANDOS")
+                {
+                    returnScene = currentScene;
+                }
+                if (typing == "RETORNAR" && currentScene == 50)
+                {
+                    currentScene = progress->changeScene(returnScene);
+                    typing = "";
+                    progressConfirmed = false;
+                }
+                else
+                {
+                    currentScene = progress->changeScene(progressScene);
+                    typing = "";
+                    progressConfirmed = false;
+                }
             }
         }
     }
@@ -591,8 +650,6 @@ int main()
     al_destroy_timer(timer);
     al_destroy_event_queue(queue);
     delete boneck;
-    //delete progress;
-    //free (progress);
     delete currentDirectionalCommand;
     delete currentHighCommand;
     delete currentInteractCommand;
